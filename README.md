@@ -21,14 +21,14 @@ Preferibile usare un indirizzo https.
 - **Jellyfin Server 10.11.11** e un account amministratore per installare e
   configurare il plugin.
 - **VibraVid già installato e funzionante**, tramite **installazione locale**
-  sul PC/server **oppure** in un **container Docker**, anche su NAS.
-  In entrambe le modalità la **GUI web di VibraVid deve essere attiva**.
+  sul PC/server/NAS **oppure** in un **container Docker**.
 - La GUI VibraVid deve essere raggiungibile tramite HTTP o HTTPS dal
   **server Jellyfin**: il suo indirizzo va inserito nelle impostazioni del plugin.
 - Le cartelle di destinazione per film e serie devono essere già configurate
   in VibraVid, con i permessi necessari per salvare i download.
 
 Installa e configura VibraVid prima di configurare il collegamento nel plugin.
+**fortemente consigliata versione webgui di Vibravid**
 
 ## Compatibilità verificata
 
