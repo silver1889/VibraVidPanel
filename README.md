@@ -2,8 +2,8 @@
 
 Plugin non ufficiale per aprire la GUI di [VibraVid](https://github.com/AstraeLabs/VibraVid)
 dentro [Jellyfin](https://jellyfin.org/). Il server Jellyfin inoltra pagine e
-richieste al servizio VibraVid: dal telefono basta raggiungere Jellyfin, anche
-quando il container resta nella rete locale.
+richieste al servizio VibraVid: il plugin funziona anche al di fuori di una rete LAN.
+Preferibile usare un indirizzo https.
 
 ## Funzioni
 
