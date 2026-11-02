@@ -1,0 +1,90 @@
+<!doctype html><html><head><title>Scarica film / serie TV</title></head><body>
+<div id="vibravidDownloadsPage" data-role="page" class="page type-interior" data-title="Scarica film / serie TV">
+ <div data-role="content" class="vpd-content">
+  <div class="vpd-toolbar">
+   <button is="emby-button" type="button" class="raised" data-vpd-back>← Jellyfin</button>
+   <h1>Scarica film / serie TV</h1>
+   <button is="emby-button" type="button" class="raised" data-vpd-reload>Ricarica</button>
+   <button is="emby-button" type="button" class="raised" data-vpd-settings hidden>Impostazioni</button>
+  </div>
+  <p data-vpd-status role="status" aria-live="polite">Connessione a VibraVid…</p>
+  <div class="vpd-frame-host"></div>
+ </div>
+ <style>
+ #vibravidDownloadsPage .vpd-content{padding:4.5em 0 0;display:flex;flex-direction:column;min-height:75vh}
+ #vibravidDownloadsPage .vpd-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;background:#1a1a21}
+ #vibravidDownloadsPage h1{font-size:1.1em;flex:1 1 170px;margin:8px}
+ #vibravidDownloadsPage [data-vpd-status]{padding:14px;margin:0}
+ #vibravidDownloadsPage .vpd-frame-host{flex:1;display:flex;min-height:0}
+ #vibravidDownloadsPage iframe{display:block;width:100%;border:0;background:#0b0b10;height:calc(100vh - 240px);height:calc(100dvh - 240px);min-height:400px}
+ @media(max-width:600px){#vibravidDownloadsPage .vpd-toolbar{padding:8px}#vibravidDownloadsPage h1{order:-1;flex-basis:100%;margin:4px}#vibravidDownloadsPage .vpd-toolbar button{font-size:.85em}}
+ #vibravidDownloadsPage.vp-keyboard .vpd-content{min-height:0}
+ #vibravidDownloadsPage.vp-keyboard .vpd-toolbar h1,#vibravidDownloadsPage.vp-keyboard [data-vpd-reload],#vibravidDownloadsPage.vp-keyboard [data-vpd-settings]{display:none}
+ </style>
+ <script>
+ (function(){
+  'use strict';
+  // The app can load this IHasWebPages entry without the injected web menu.
+  // Resolve every request using Jellyfin's active ApiClient, as LiveBridge does.
+  if(window.__VibraVidDownloadsBinderV12)return;
+  window.__VibraVidDownloadsBinderV12=true;
+  function field(object,name){return object[name]!==undefined?object[name]:object[name[0].toLowerCase()+name.slice(1)];}
+  function bind(view){
+   if(view.dataset.vpdBound)return;
+   view.dataset.vpdBound='true';
+   var active=false,generation=0,lease=null,detachViewport=null;
+   var status=view.querySelector('[data-vpd-status]'),host=view.querySelector('.vpd-frame-host');
+   function release(){
+    generation++;if(detachViewport){detachViewport();detachViewport=null;}host.replaceChildren();
+    if(lease){
+     var current=lease;lease=null;
+     fetch(current.closeUrl,{method:'DELETE',headers:{Authorization:'MediaBrowser Token="'+current.token+'"'},keepalive:true}).catch(function(){});
+    }
+   }
+   function call(path,method){return ApiClient.ajax({type:method||'GET',url:ApiClient.getUrl(path),dataType:'json'});}
+   function viewportScript(){
+    if(window.VibraVidViewport)return Promise.resolve();
+    if(!window.__VibraVidViewportLoading)window.__VibraVidViewportLoading=new Promise(function(resolve,reject){
+     var script=document.createElement('script');script.src=ApiClient.getUrl('VibraVidPanel/assets/viewport.js')+'?v=1.3.1.0';
+     script.onload=resolve;script.onerror=function(){window.__VibraVidViewportLoading=null;reject(Error('viewport'));};document.head.appendChild(script);
+    });
+    return window.__VibraVidViewportLoading;
+   }
+   async function open(){
+    release();var own=generation;status.hidden=false;status.textContent='Connessione a VibraVid…';
+    view.querySelector('[data-vpd-settings]').hidden=true;
+    try{
+     var config=await call('VibraVidPanel/client');
+     if(!active||own!==generation)return;
+     var admin=!!field(config,'IsAdministrator');
+     view.querySelector('[data-vpd-settings]').hidden=!admin;
+     if(!field(config,'Enabled')){status.textContent='VibraVid è disattivato nelle impostazioni del plugin.';return;}
+     if(!field(config,'Configured')){status.textContent=field(config,'ConfigurationError')||'Il server Jellyfin non ha un indirizzo VibraVid configurato. Apri le impostazioni del plugin.';return;}
+     await viewportScript();if(!active||own!==generation)return;
+     var token=ApiClient.accessToken();
+     var result=await call('VibraVidPanel/session','POST');
+     var ticket=field(result,'Ticket');
+     var closeUrl=ApiClient.getUrl('VibraVidPanel/session/'+encodeURIComponent(ticket));
+     if(!active||own!==generation){fetch(closeUrl,{method:'DELETE',headers:{Authorization:'MediaBrowser Token="'+token+'"'}}).catch(function(){});return;}
+     var expected=new URL(ApiClient.getUrl('VibraVidPanel/gui/'));
+     var address=new URL(field(result,'Url'),expected);
+     if(address.origin!==expected.origin||address.pathname.indexOf(expected.pathname)!==0)throw Error('Indirizzo della sessione non valido.');
+     lease={closeUrl:closeUrl,token:token};
+     var frame=document.createElement('iframe');frame.title='GUI VibraVid';frame.referrerPolicy='no-referrer';
+     frame.setAttribute('sandbox','allow-scripts allow-forms allow-downloads');
+     frame.addEventListener('load',function(){if(active&&own===generation)status.hidden=true;});
+     frame.src=address.href;host.appendChild(frame);detachViewport=VibraVidViewport.attach(frame,view);
+    }catch(error){if(active&&own===generation){status.hidden=false;status.textContent='Connessione tramite Jellyfin non riuscita. Premi Ricarica; verifica di essere collegato al server corretto.';}}
+   }
+   view.querySelector('[data-vpd-reload]').addEventListener('click',open);
+   view.querySelector('[data-vpd-back]').addEventListener('click',function(){window.location.hash='#/home';});
+   view.querySelector('[data-vpd-settings]').addEventListener('click',function(){window.location.hash='#/configurationpage?name=VibraVidPanel';});
+   view.addEventListener('pageshow',function(){active=true;open();});
+   view.addEventListener('pagehide',function(){active=false;release();});
+   view.__vpdOpen=function(){active=true;open();};
+  }
+  document.addEventListener('pageshow',function(event){if(event.target&&event.target.id==='vibravidDownloadsPage'){var view=event.target;var existing=!!view.dataset.vpdBound;bind(view);if(!existing)view.__vpdOpen();}},true);
+  document.querySelectorAll('#vibravidDownloadsPage').forEach(bind);
+ }());
+ </script>
+</div></body></html>

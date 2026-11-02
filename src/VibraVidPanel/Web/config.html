@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html><head><title>VibraVid Panel · Impostazioni</title></head><body>
+<div id="vibravidSettingsPage" data-role="page" class="page type-interior pluginConfigurationPage">
+  <div data-role="content"><div class="content-primary" style="max-width:54em;margin:auto">
+    <h1>VibraVid Panel</h1>
+    <p>La GUI si apre dentro Jellyfin. È il server Jellyfin a collegarsi al container: dal telefono serve soltanto l’accesso a Jellyfin.</p>
+    <form id="vibravidSettingsForm">
+      <div class="inputContainer"><label class="inputLabel" for="vibravidGuiUrl">Indirizzo interno del container VibraVid</label>
+        <input is="emby-input" id="vibravidGuiUrl" type="url" placeholder="http://IP-del-NAS:9010/">
+        <div class="fieldDescription">Inserisci l’URL raggiungibile dal server Jellyfin, completo di http:// o https:// e porta. Può essere un indirizzo LAN. Le cartelle di download restano quelle già configurate in VibraVid.</div>
+      </div>
+      <div class="inputContainer"><label class="inputLabel" for="vibravidMenuTitle">Voce nel menu</label><input is="emby-input" id="vibravidMenuTitle" required maxlength="80"></div>
+      <div class="checkboxContainer"><label><input is="emby-checkbox" type="checkbox" id="vibravidEnabled"><span>Mostra la voce nel menu</span></label></div>
+      <div class="checkboxContainer"><label><input is="emby-checkbox" type="checkbox" id="vibravidAdminOnly"><span>Consenti l’accesso solo agli amministratori Jellyfin</span></label></div>
+      <p>La GUI resta quella del tuo container esistente. Gli utenti condividono le funzioni e i permessi già disponibili in VibraVid.</p>
+      <p id="vibravidSettingsStatus" role="status" aria-live="polite"></p>
+      <button is="emby-button" type="submit" class="raised button-submit block"><span>Salva</span></button>
+      <button is="emby-button" type="button" class="raised block" data-vibravid-open-panel><span>Apri pannello VibraVid</span></button>
+    </form>
+  </div></div>
+  <script type="text/javascript">
+  (function () {
+    'use strict';
+    if (window.__VibraVidSettingsBinder) return;
+    window.__VibraVidSettingsBinder = true;
+    function bind(page) {
+      if (page.dataset.vibravidBound) return;
+      page.dataset.vibravidBound = 'true';
+      page.querySelector('form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        var status = page.querySelector('#vibravidSettingsStatus'); status.textContent = 'Salvataggio…';
+        var body = { GuiUrl: page.querySelector('#vibravidGuiUrl').value.trim(), MenuTitle: page.querySelector('#vibravidMenuTitle').value.trim(), Enabled: page.querySelector('#vibravidEnabled').checked, OnlyAdministrators: page.querySelector('#vibravidAdminOnly').checked, OpenMode: 'proxy' };
+        try {
+          await ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('VibraVidPanel/settings'), contentType: 'application/json', data: JSON.stringify(body) });
+          status.textContent = 'Impostazioni salvate.'; window.dispatchEvent(new Event('vibravid-settings-changed'));
+        } catch (_) { status.textContent = 'Salvataggio non riuscito. Verifica l’indirizzo completo e i permessi amministratore.'; }
+      });
+      page.querySelector('[data-vibravid-open-panel]').addEventListener('click', function () { location.hash = '#/configurationpage?name=VibraVidDownloads'; });
+    }
+    async function load(page) {
+      bind(page); var status = page.querySelector('#vibravidSettingsStatus');
+      try {
+        var settings = await ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('VibraVidPanel/settings'), dataType: 'json' });
+        page.querySelector('#vibravidGuiUrl').value = settings.GuiUrl || '';
+        page.querySelector('#vibravidMenuTitle').value = settings.MenuTitle || 'Scarica film / serie TV';
+        page.querySelector('#vibravidEnabled').checked = settings.Enabled !== false;
+        page.querySelector('#vibravidAdminOnly').checked = !!settings.OnlyAdministrators; status.textContent = '';
+      } catch (_) { status.textContent = 'Impossibile leggere le impostazioni. Verifica la sessione amministratore.'; }
+    }
+    document.addEventListener('pageshow', function (event) { if (event.target && event.target.id === 'vibravidSettingsPage') load(event.target); });
+    document.querySelectorAll('#vibravidSettingsPage').forEach(bind);
+  }());
+  </script>
+</div>
+</body></html>

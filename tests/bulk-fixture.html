@@ -1,0 +1,40 @@
+<h2>Serie di prova in blocco</h2>
+<form method="post" action="/series-detail/">
+ <input type="hidden" name="csrfmiddlewaretoken" value="fixture-csrf">
+ <input type="hidden" name="source_alias" value="fixture">
+ <input type="hidden" name="item_payload" value='{"name":"Serie in blocco di prova","type":"tv","is_movie":false}'>
+ <input type="hidden" name="download_type" value="full_series">
+ <input type="hidden" name="audio_language" value="it">
+ <input type="hidden" name="manual_tracks" value="on">
+ <button type="submit" id="cn-all">Download all</button>
+</form>
+<label><input type="checkbox" class="cn-season-pick" value="1">Stagione 1</label>
+<label><input type="checkbox" class="cn-season-pick" value="3">Stagione 3</label>
+<form method="post" action="/series-detail/" id="cn-seasons-form">
+ <input type="hidden" name="csrfmiddlewaretoken" value="fixture-csrf">
+ <input type="hidden" name="source_alias" value="fixture">
+ <input type="hidden" name="item_payload" value='{"name":"Serie in blocco di prova","type":"tv","is_movie":false}'>
+ <input type="hidden" name="download_type" value="selected_seasons">
+ <input type="hidden" name="selected_seasons" id="cn-seasons-input" value="">
+ <input type="hidden" name="audio_language" value="it">
+ <input type="hidden" name="manual_tracks" value="on">
+</form>
+<button type="button" id="cn-seasons-btn">Download stagioni selezionate</button>
+<script>
+ // The real GUI 1.4.9 uses these native confirmation handlers.
+ document.getElementById('cn-all').addEventListener('click', function (e) {
+  if (!confirm('Download ALL seasons? This can take a while.')) e.preventDefault();
+ });
+ document.getElementById('cn-seasons-btn').addEventListener('click', function () {
+  var chosen = Array.from(document.querySelectorAll('.cn-season-pick:checked'), c => c.value);
+  if (!chosen.length) return;
+  if (!confirm('Download seasons ' + chosen.join(', ') + '?')) return;
+  document.getElementById('cn-seasons-input').value = chosen.join(',');
+  document.getElementById('cn-seasons-form').requestSubmit();
+ });
+ // Downstream submit handlers (e.g. quality/audio) must still run after approval.
+ document.addEventListener('submit', function (e) {
+  var field = document.createElement('input'); field.type = 'hidden';
+  field.name = 'fixture_submit_handler'; field.value = 'kept'; e.target.appendChild(field);
+ });
+</script>
