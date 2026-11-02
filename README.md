@@ -60,17 +60,19 @@ gli stessi pacchetti saranno disponibili anche nella sezione **Releases**.
 
 ## Catalogo Jellyfin
 
-Il workflow **Pubblica release** genera automaticamente un `manifest.json` con
-gli URL del repository in cui viene eseguito. Dopo aver pubblicato una release,
-aggiungi in **Plugin → Repository** questo indirizzo:
+Per installare il plugin direttamente da Jellyfin:
 
-```text
-https://github.com/silver1889/VibraVidPanel/releases/latest/download/manifest.json
-```
+1. Accedi a Jellyfin con un account amministratore.
+2. Vai in **Pannello di controllo → Plugin → Repository** e aggiungi un repository.
+3. Come nome scrivi **VibraVid Panel**. Nel campo dell'indirizzo incolla questo link:
 
-Il feed diventa disponibile dopo la prima esecuzione riuscita del workflow.
-Il pacchetto per il catalogo ha i file del plugin nella radice dello ZIP; quello
-per l'installazione manuale contiene anche la cartella da copiare e la guida.
+   ```text
+   https://github.com/silver1889/VibraVidPanel/releases/latest/download/manifest.json
+   ```
+
+4. Salva, apri il **Catalogo**, cerca **VibraVid Panel** e premi **Installa**.
+5. Riavvia Jellyfin, poi apri le impostazioni del plugin e inserisci l'indirizzo
+   della tua GUI VibraVid.
 
 ## Come funziona
 
